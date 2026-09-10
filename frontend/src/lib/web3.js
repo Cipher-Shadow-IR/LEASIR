@@ -7,7 +7,7 @@ let contract = null;
 let contractAddress = null;
 
 export async function connectWallet() {
-  if (!window.ethereum) {
+  if (typeof window === "undefined" || !window.ethereum) {
     throw new Error("MetaMask not installed");
   }
 
@@ -34,17 +34,22 @@ export async function getContract(address) {
 
 export async function getReadOnlyContract(address) {
   if (!provider) {
-    provider = new BrowserProvider(window.ethereum);
+    if (typeof window !== "undefined" && window.ethereum) {
+      provider = new BrowserProvider(window.ethereum);
+    } else {
+      return null;
+    }
   }
   return new Contract(address, CONTRACT_ABI, provider);
 }
 
 export async function getAccounts() {
-  if (!window.ethereum) return [];
+  if (typeof window === "undefined" || !window.ethereum) return [];
   return window.ethereum.request({ method: "eth_accounts" });
 }
 
 export async function getBalance(address) {
+  if (typeof window === "undefined") return "0";
   if (!provider) {
     if (!window.ethereum) return "0";
     provider = new BrowserProvider(window.ethereum);
@@ -54,7 +59,7 @@ export async function getBalance(address) {
 }
 
 export async function switchToLocalhost() {
-  if (!window.ethereum) return;
+  if (typeof window === "undefined" || !window.ethereum) return;
 
   try {
     await window.ethereum.request({
@@ -87,11 +92,11 @@ export function parseEth(eth) {
 }
 
 export function listenAccountChange(callback) {
-  if (!window.ethereum) return;
+  if (typeof window === "undefined" || !window.ethereum) return;
   window.ethereum.on("accountsChanged", callback);
 }
 
 export function listenChainChange(callback) {
-  if (!window.ethereum) return;
+  if (typeof window === "undefined" || !window.ethereum) return;
   window.ethereum.on("chainChanged", callback);
 }

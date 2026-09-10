@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { connectWallet, getContract, switchToLocalhost, formatEth, parseEth } from "@/lib/web3";
 import { AGREEMENT_STATES } from "@/lib/contract";
 import {
@@ -27,8 +28,9 @@ import {
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
-export default function AgreementDetail({ params }) {
-  const { id } = use(params);
+export default function AgreementDetail() {
+  const routeParams = useParams();
+  const id = routeParams?.id;
   const [account, setAccount] = useState(null);
   const [agreement, setAgreement] = useState(null);
   const [payments, setPayments] = useState([]);

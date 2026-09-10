@@ -49,6 +49,7 @@ export function useAgreements() {
     setLoading(true);
     try {
       const contract = await getReadOnlyContract(CONTRACT_ADDRESS);
+      if (!contract) return [];
       const ids = await contract.getLandlordAgreements(address);
       const details = await Promise.all(
         ids.map((id) => contract.getAgreement(id))
@@ -79,6 +80,7 @@ export function useAgreements() {
     setLoading(true);
     try {
       const contract = await getReadOnlyContract(CONTRACT_ADDRESS);
+      if (!contract) return [];
       const ids = await contract.getTenantAgreements(address);
       const details = await Promise.all(
         ids.map((id) => contract.getAgreement(id))
@@ -109,6 +111,7 @@ export function useAgreements() {
     setLoading(true);
     try {
       const contract = await getReadOnlyContract(CONTRACT_ADDRESS);
+      if (!contract) return null;
       const a = await contract.getAgreement(id);
       return {
         id: Number(a.id),
