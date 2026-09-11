@@ -1,10 +1,19 @@
-import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
+import { BrowserProvider, Contract, formatEther, parseEther, getAddress, isAddress } from "ethers";
 import { CONTRACT_ABI } from "./contract";
 
 let provider = null;
 let signer = null;
 let contract = null;
 let contractAddress = null;
+
+export function sanitizeAddress(addr) {
+  if (!addr) return "";
+  const cleaned = String(addr).trim();
+  if (!isAddress(cleaned)) {
+    throw new Error(`Invalid Ethereum address: "${addr}". Please provide a valid 0x address.`);
+  }
+  return getAddress(cleaned);
+}
 
 export async function connectWallet() {
   if (typeof window === "undefined" || !window.ethereum) {
@@ -15,7 +24,7 @@ export async function connectWallet() {
   const accounts = await provider.send("eth_requestAccounts", []);
   signer = await provider.getSigner();
 
-  return { address: accounts[0], provider, signer };
+  return { address: getAddress(accounts[0]), provider, signer };
 }
 
 export async function getContract(address) {
@@ -23,12 +32,13 @@ export async function getContract(address) {
     throw new Error("Wallet not connected");
   }
 
-  if (contract && contractAddress === address) {
+  const cleanAddr = sanitizeAddress(address);
+  if (contract && contractAddress === cleanAddr) {
     return contract;
   }
 
-  contractAddress = address;
-  contract = new Contract(address, CONTRACT_ABI, signer);
+  contractAddress = cleanAddr;
+  contract = new Contract(cleanAddr, CONTRACT_ABI, signer);
   return contract;
 }
 

@@ -1,165 +1,158 @@
-# Smart Contract Rental Agreement
+<p align="center">
+  <img src="frontend/public/LEASIR_LOGO.png" alt="LEASIR Logo" width="160" />
+</p>
 
-Decentralized rental agreement platform built on Ethereum. Landlords and tenants can create, manage, and complete rental agreements on-chain with automated rent payments, security deposit handling, and dispute resolution.
+<p align="center">
+  <img src="https://img.shields.io/badge/LEASIR-Smart%20Lease%20%26%20Escrow-4f46e5?style=for-the-badge&logo=ethereum" alt="LEASIR Banner" />
+</p>
 
-## Tech Stack
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Plus+Jakarta+Sans&size=32&duration=4000&color=4F46E5&center=true&vCenter=true&width=1000&height=70&lines=LEASIR+%7C+Smart+Contract+Rental+Agreements;Security+Deposit+Escrow+%7C+Automated+Rent+Streams" alt="Typing SVG" />
+</p>
 
-- **Smart Contract**: Solidity `0.8.28` + Hardhat
-- **Frontend**: Next.js 15 + React 19 + ethers.js
-- **Styling**: Tailwind CSS 4
-- **Local Blockchain**: Hardhat Network
+<h2 align="center">⚖️ Decentralized Smart Contract Rental Agreements & Escrow Protocol.</h2>
 
-## Project Structure
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Version-2.1.0-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Solidity-0.8.28-purple?style=for-the-badge&logo=solidity" />
+  <img src="https://img.shields.io/badge/Next.js-15.5-black?style=for-the-badge&logo=next.js" />
+  <img src="https://img.shields.io/badge/Tests-7%2F7%20Passing-emerald?style=for-the-badge" />
+</p>
 
-```
-contracts/          # Solidity smart contract & Hardhat setup
-  contracts/        # Solidity sources
-  test/             # Contract tests (Hardhat + Chai)
-  scripts/          # Deployment scripts
-frontend/           # Next.js dApp frontend
-  src/
-    app/            # Next.js App Router pages
-    components/     # UI components
-    hooks/          # React hooks (wallet, contract)
-    lib/            # Web3 utilities, ABI
-```
-
-## Smart Contract
-
-The `RentalAgreement` contract manages the full lifecycle of rental agreements:
-
-| State | Description |
-|-------|-------------|
-| Pending | Created by landlord, awaiting tenant acceptance |
-| Active | Tenant accepted, rent payments in progress |
-| Terminated | Landlord ended the agreement after end date |
-| Disputed | Either party raised a dispute |
-| Completed | Dispute resolved or deposit refunded |
-
-### Key Functions
-
-| Function | Role | Description |
-|----------|------|-------------|
-| `createAgreement` | Landlord | Creates a new agreement with rent, deposit, dates |
-| `acceptAgreement` | Tenant | Accepts and activates the agreement |
-| `payRent` | Tenant | Pay monthly rent (sends ETH to landlord) |
-| `terminateAgreement` | Landlord | Terminate after end date passes |
-| `raiseDispute` | Either | Raise a dispute on active/terminated agreements |
-| `resolveDispute` | (Arbitrator) | Resolve dispute, deposit sent to favored party |
-| `refundDeposit` | Landlord | Refund security deposit to tenant |
+---
+> *"Autonomous Legal Lease & Escrow Protocol."*  
+> **LEASIR** replaces traditional paper rental agreements with deterministic Ethereum smart contracts.  
+> Built with **Solidity 0.8.28**, **Next.js 15.5 (App Router)**, **Ethers.js v6**, and **Tailwind CSS** for trustless security deposit escrow, direct rent payments, and transparent dispute resolution.
 
 ---
 
-## Getting Started
+# ✨ Features
+
+- 🔒 **Security Deposit Escrow Lock** — Holds tenant deposits securely in the smart contract balance, eliminating unilateral withholding by landlords.
+- ⚡ **Automated Monthly Rent Streams** — Direct wei routing from tenant to landlord with cryptographic on-chain receipts.
+- ⚖️ **Dispute Arbitration Engine** — Mutual attestation protocol allowing either party to trigger contract-governed escrow resolution.
+- 📊 **Lease Command Center** — Role-based toggle switching between Landlord Mode and Tenant Mode with live balance & telemetry badging.
+- 📑 **Digital Lease Drafter** — Intuitive form interface to deploy customized smart contract leases with custom duration, rent, and deposit rules.
+- 🌙 **Dual Theme System** — High-contrast Light & Dark themes with clean selection highlights (`selection:bg-blue-200`).
+- 🛡️ **7 Hardhat Unit Tests** — Security audited contract logic covering creation, acceptance, rent payment, dispute escalation, and termination.
+
+---
+
+# 💡 Why This Project?
+
+This platform demonstrates:
+
+- **Legal Tech Innovation**: Converting static legal agreements into enforceable, self-executing smart contracts.
+- **Modern Next.js 15 Engineering**: Fast server-side rendering, App Router architecture, and clean client-side hooks.
+- **Financial Safety**: Zero-custody escrow locks ensuring funds are released strictly under validated contract states.
+
+---
+
+# 🧩 Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Smart Contract | Solidity `0.8.28`, Hardhat, Ethers.js v6 |
+| Web Application | Next.js 15.5 (App Router), React 19, Tailwind CSS 3 |
+| Icons & UI | Lucide React, Custom Theme Toggle, CountUp |
+| Local Testnet | Hardhat Local Node (`localhost:8545`) |
+
+---
+
+# 📂 Project Structure
+
+```plaintext
+Smart Contract Rental Agreement/
+├── contracts/
+│   ├── RentalAgreement.sol     # Core Solidity Smart Contract (0.8.28)
+│   ├── hardhat.config.js       # Hardhat network & compiler setup
+│   └── test/
+│       └── RentalAgreement.test.js  # Hardhat Unit Test Suite (7 Passing)
+├── frontend/
+│   ├── public/
+│   │   └── LEASIR_LOGO.png     # Official LEASIR Brand Asset
+│   ├── src/
+│   │   ├── app/                # Next.js App Router (page.js, layout.js, not-found.js, agreements/, create/)
+│   │   ├── components/         # Navbar, Footer, AgreementCard, ThemeToggle, CountUp, Marquee
+│   │   ├── hooks/              # useContract, useWallet custom hooks
+│   │   ├── lib/                # Web3 providers & contract connection utilities
+│   │   └── globals.css         # Tailwind directives & dual theme overrides
+│   ├── package.json
+│   └── tailwind.config.js
+└── README.md
+```
+
+---
+
+# ⚙️ Installation & Run Locally
 
 ### Prerequisites
-
-- Node.js 22+
+- Node.js 18+
 - MetaMask browser extension
-- Docker (optional, for containerized setup)
 
-### 1. Environment Setup
-
-```bash
-cp .env.example .env
-```
-
-### 2. Start Local Blockchain & Deploy
-
-#### Option A: Docker (recommended)
+### 1. Smart Contract Test & Node Setup
 
 ```bash
-docker compose up --build
-```
+# Clone repository
+git clone https://github.com/Cipher-Shadow-IR/LEASIR-Smart-Contract-Rental-Agreement.git
+cd "Smart Contract Rental Agreement/contracts"
 
-This starts:
-- Hardhat node at `http://localhost:8545`
-- Frontend at `http://localhost:3000`
-
-Deploy the contract:
-
-```bash
-docker compose exec hardhat npx hardhat run scripts/deploy.js --network localhost
-```
-
-Copy the deployed contract address and set it in `.env` as `NEXT_PUBLIC_CONTRACT_ADDRESS`, then restart the frontend.
-
-#### Option B: Without Docker
-
-**Terminal 1 — Hardhat node:**
-
-```bash
-cd contracts
+# Install dependencies & run tests
 npm install
-npx hardhat node
-```
-
-**Terminal 2 — Deploy contract:**
-
-```bash
-cd contracts
-npx hardhat run scripts/deploy.js --network localhost
-```
-
-Copy the printed contract address.
-
-**Terminal 3 — Frontend:**
-
-```bash
-cd frontend
-npm install
-set NEXT_PUBLIC_CONTRACT_ADDRESS=<deployed-address>
-npm run dev
-```
-
-Open `http://localhost:3000` in your browser.
-
-### 3. Configure MetaMask
-
-1. Add Hardhat Network:
-   - **Network Name**: Hardhat Local
-   - **RPC URL**: `http://localhost:8545`
-   - **Chain ID**: `31337`
-   - **Currency Symbol**: `ETH`
-2. Import a test account (Hardhat provides 20 accounts with 10000 ETH each):
-   - Private key: `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` (Account #0)
-3. Switch to the Hardhat network.
-
-### 4. Usage
-
-1. Connect MetaMask on the dashboard.
-2. As a **landlord**: create a new agreement with tenant address, rent, deposit, and dates.
-3. As a **tenant**: switch MetaMask to the tenant account, accept the agreement, and pay rent.
-4. After the end date passes, the landlord can terminate and refund the deposit.
-5. Either party can raise a dispute if needed.
-
----
-
-## Running Tests
-
-```bash
-cd contracts
 npx hardhat test
 ```
 
+### 2. Start Local Blockchain
+
+```bash
+npx hardhat node
+```
+
+### 3. Run Frontend Next.js Application
+
+```bash
+cd "../frontend"
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
 ---
 
-## Docker Services
+# 📬 Smart Contract API Reference
 
-| Service | Port | Description |
-|---------|------|-------------|
-| hardhat | 8545 | Hardhat local blockchain node |
-| frontend | 3000 | Next.js dApp |
+### Contract Methods
 
-## Environment Variables
+| Function | Access | Parameters | Description |
+|----------|--------|------------|-------------|
+| `createAgreement` | Landlord | `address payable _tenant, uint256 _rent, uint256 _deposit, uint256 _durationDays` | Drafts a new lease |
+| `acceptAgreement` | Tenant | `uint256 _id` | Deposit escrow funding & lease activation |
+| `payRent` | Tenant | `uint256 _id` | Transfers monthly rent directly to landlord |
+| `raiseDispute` | Landlord/Tenant | `uint256 _id` | Escalates contract to Disputed state |
+| `terminateLease` | Landlord/Tenant | `uint256 _id` | Releases security deposit back to tenant upon expiry |
 
-| Variable | Description |
-|----------|-------------|
-| `RPC_URL` | Blockchain RPC endpoint (default: `http://localhost:8545`) |
-| `PRIVATE_KEY` | Deployer wallet private key |
-| `NEXT_PUBLIC_RPC_URL` | Frontend RPC URL |
-| `NEXT_PUBLIC_CONTRACT_ADDRESS` | Deployed contract address (set after deployment) |
+---
 
-## License
+# 💬 Author
 
-MIT
+<p align="center">
+  <b>Designed & Developed by Ishaan Ray (Cipher Shadow)</b><br>
+  <i>"Autonomous Legal Lease & Escrow Protocol."</i><br><br>
+  <a href="https://github.com/Cipher-Shadow-IR" target="_blank">
+    <img src="https://img.shields.io/badge/GitHub-Cipher%20Shadow-181717?style=for-the-badge&logo=github" />
+  </a>
+  <a href="https://linkedin.com/in/ishaan-ray-cs" target="_blank">
+    <img src="https://img.shields.io/badge/LinkedIn-Ishaan%20Ray-0A66C2?style=for-the-badge&logo=linkedin" />
+  </a>
+  <a href="https://galaxir.vercel.app/" target="_blank">
+    <img src="https://img.shields.io/badge/Portfolio-Galaxir-6366F1?style=for-the-badge" />
+  </a>
+</p>
+
+---
+
+# 📜 License
+
+MIT License © Ishaan Ray

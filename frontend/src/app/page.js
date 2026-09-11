@@ -7,6 +7,7 @@ import AgreementCard from "@/components/AgreementCard";
 import { useAgreements } from "@/hooks/useContract";
 import CountUp from "@/components/CountUp";
 import Marquee from "@/components/Marquee";
+import Reveal from "@/components/Reveal";
 import {
   Scale,
   Shield,
@@ -92,7 +93,7 @@ export default function Dashboard() {
     return (
       <div className="py-6 sm:py-8 space-y-12">
         {/* Protocol Hero with Floating Tilted UI Cards */}
-        <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-gradient-to-b from-slate-900/90 via-slate-950 to-slate-950 p-6 sm:p-12 lg:p-16 legal-grid shadow-2xl">
+        <div className="relative rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-slate-100 via-white to-white dark:from-slate-900/90 dark:via-slate-950 dark:to-slate-950 p-6 sm:p-12 lg:p-16 legal-grid shadow-2xl">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.18),transparent_70%)] pointer-events-none" />
 
           {/* Ambient blurred glow blobs */}
@@ -103,24 +104,31 @@ export default function Dashboard() {
             
             {/* Left / Center Column: Copy & Actions */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-1 text-xs font-mono font-medium text-indigo-400 backdrop-blur-md">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>ETHEREUM SMART CONTRACT ESCROW PROTOCOL</span>
-              </div>
+              <Reveal>
+                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-1 text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400 backdrop-blur-md">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>ETHEREUM SMART CONTRACT ESCROW PROTOCOL</span>
+                </div>
+              </Reveal>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12]">
-                Trustless Digital Leases with{" "}
-                <span className="bg-gradient-to-r from-indigo-400 via-blue-400 to-cyan-300 bg-clip-text text-transparent">
-                  On-Chain Escrow
-                </span>
-              </h1>
+              <Reveal delay={90}>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12]">
+                  Trustless Digital Leases with{" "}
+                  <span className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent dark:from-indigo-400 dark:via-blue-400 dark:to-cyan-300">
+                    On-Chain Escrow
+                  </span>
+                </h1>
+              </Reveal>
 
-              <p className="text-sm sm:text-base text-slate-400 max-w-2xl leading-relaxed">
+              <Reveal delay={180}>
+                <p className="text-sm sm:text-base text-slate-400 max-w-2xl leading-relaxed">
                 LEASIR replaces paper rental agreements with deterministic Solidity smart contracts.
                 Automate rent payments directly to landlords, safeguard security deposits in trustless escrow,
                 and resolve tenancy disputes with mathematical transparency.
               </p>
+              </Reveal>
 
+              <Reveal delay={260}>
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                 <button
                   onClick={connect}
@@ -131,14 +139,16 @@ export default function Dashboard() {
                 </button>
                 <Link
                   href="/agreements"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-3.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white transition-all"
                 >
                   <span>Browse Registry</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
+              </Reveal>
 
               {/* Protocol Telemetry Mini Strip */}
+              <Reveal delay={340}>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-slate-800/80 text-left">
                 <div className="space-y-0.5">
                   <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Escrow Value</p>
@@ -163,6 +173,7 @@ export default function Dashboard() {
                   <p className="text-sm sm:text-base font-bold text-cyan-400">Solidity Logic</p>
                 </div>
               </div>
+              </Reveal>
             </div>
 
             {/* Right Column: Floating Tilted UI Cards */}

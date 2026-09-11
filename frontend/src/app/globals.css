@@ -137,6 +137,74 @@ html:not(.dark) .border-slate-700\/60 {
   border-color: #e2e8f0 !important;
 }
 
+html.light .border-slate-700\/50,
+html:not(.dark) .border-slate-700\/50 {
+  border-color: #e2e8f0 !important;
+}
+
+html.light .bg-slate-950\/60,
+html:not(.dark) .bg-slate-950\/60 {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+
+html.light .bg-slate-900\/20,
+html:not(.dark) .bg-slate-900\/20 {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+html.light .bg-slate-900\/40,
+html:not(.dark) .bg-slate-900\/40 {
+  background-color: rgba(248, 250, 252, 0.6) !important;
+}
+
+html.light .bg-slate-900\/50,
+html:not(.dark) .bg-slate-900\/50 {
+  background-color: rgba(248, 250, 252, 0.85) !important;
+}
+
+html.light .bg-slate-950\/50,
+html:not(.dark) .bg-slate-950\/50 {
+  background-color: rgba(248, 250, 252, 0.5) !important;
+}
+
+html.light .hover\:bg-slate-900\/40:hover,
+html:not(.dark) .hover\:bg-slate-900\/40:hover {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+
+html.light .divide-slate-800\/80,
+html:not(.dark) .divide-slate-800\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Accent colors tuned for light backgrounds */
+html.light .text-indigo-400,
+html:not(.dark) .text-indigo-400 {
+  color: #4f46e5 !important;
+}
+
+html.light .text-blue-400,
+html:not(.dark) .text-blue-400 {
+  color: #2563eb !important;
+}
+
+html.light .text-cyan-400,
+html:not(.dark) .text-cyan-400 {
+  color: #0891b2 !important;
+}
+
+html.light .text-emerald-400,
+html:not(.dark) .text-emerald-400 {
+  color: #059669 !important;
+}
+
+html.light .text-slate-500,
+html:not(.dark) .text-slate-500,
+html.light .text-slate-600,
+html:not(.dark) .text-slate-600 {
+  color: #475569 !important;
+}
+
 .glow-card-hover {
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -172,4 +240,16 @@ html:not(.dark) .border-slate-700\/60 {
 
 .animate-float-slower {
   animation: float-slower 9.5s ease-in-out infinite;
+}
+
+/* Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

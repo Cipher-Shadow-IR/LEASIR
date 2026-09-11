@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { connectWallet, getContract, parseEth, switchToLocalhost } from "@/lib/web3";
+import { connectWallet, getContract, parseEth, switchToLocalhost, sanitizeAddress } from "@/lib/web3";
 import {
   FileSignature,
   Shield,
@@ -56,6 +56,8 @@ export default function CreateAgreement() {
     try {
       await connectWallet();
       await switchToLocalhost();
+
+      const validTenant = sanitizeAddress(form.tenantAddress);
       const contract = await getContract(CONTRACT_ADDRESS);
 
       const rentWei = parseEth(form.rentAmount);
@@ -65,7 +67,7 @@ export default function CreateAgreement() {
       const graceSeconds = Number(form.gracePeriod) * DAY_SECONDS;
 
       const tx = await contract.createAgreement(
-        form.tenantAddress.trim(),
+        validTenant,
         rentWei,
         depositWei,
         startUnix,
@@ -84,7 +86,11 @@ export default function CreateAgreement() {
         agreementId,
       });
     } catch (err) {
-      setError(err.reason || err.message || "Transaction failed");
+      if (err.code === "UNSUPPORTED_OPERATION" || err.message?.includes("ENS") || err.message?.includes("getEnsAddress")) {
+        setError("Invalid tenant address. Please enter a valid 0x Ethereum checksummed address.");
+      } else {
+        setError(err.reason || err.message || "Transaction failed");
+      }
     } finally {
       setLoading(false);
     }

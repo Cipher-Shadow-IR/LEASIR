@@ -32,9 +32,11 @@ export default function Navbar({ onConnect }) {
           {/* Brand */}
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-                <Scale className="h-5 w-5" />
-              </div>
+              <img
+                src="/LEASIR_LOGO.png"
+                alt="LEASIR Logo"
+                className="h-9 w-9 object-contain group-hover:scale-105 transition-transform shrink-0"
+              />
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
                   <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white font-sans">LEASIR</span>

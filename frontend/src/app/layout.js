@@ -2,6 +2,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
+import LeasirPreloader from "@/components/LeasirPreloader";
 
 export const metadata = {
   title: "LEASIR — Smart Contract Rental Agreements & Escrow Protocol",
@@ -62,11 +63,15 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en" className="dark scroll-smooth" suppressHydrationWarning>
+      <head>
+        <link rel="icon" type="image/png" href="/LEASIR_LOGO.png" />
+      </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased flex flex-col selection:bg-blue-200 selection:text-blue-900 dark:selection:bg-blue-600/40 dark:selection:text-blue-100 overflow-x-hidden transition-colors duration-200">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <LeasirPreloader />
         <Navbar />
         <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <PageTransition>{children}</PageTransition>
