@@ -1,27 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 export default function PageTransition({ children }) {
   const pathname = usePathname();
-  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsVisible(false);
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 20);
-
-    return () => clearTimeout(timer);
+    window.scrollTo(0, 0);
   }, [pathname]);
 
   return (
-    <div
-      className={`transition-all duration-300 ease-out transform ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2.5"
-      }`}
-    >
+    <div key={pathname} className="animate-page-enter">
       {children}
     </div>
   );

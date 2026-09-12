@@ -5,9 +5,9 @@ import PageTransition from "@/components/PageTransition";
 import LeasirPreloader from "@/components/LeasirPreloader";
 
 export const metadata = {
-  title: "LEASIR — Smart Contract Rental Agreements & Escrow Protocol",
+  title: "LEASIR — On-Chain Rental Agreements & Escrow",
   description:
-    "Decentralized legal-tech platform for automated rent payments, security deposit escrow, and transparent on-chain dispute resolution on Ethereum.",
+    "LEASIR encodes landlord–tenant lease terms as Solidity smart contracts: rent obligations, security deposit terms, and dispute states recorded and executed on the connected Ethereum network.",
   keywords: [
     "Smart Contract",
     "Rental Agreement",
@@ -34,15 +34,15 @@ export const metadata = {
     locale: "en_US",
     url: "https://leasir.vercel.app",
     siteName: "LEASIR Protocol",
-    title: "LEASIR — Smart Contract Rental Agreements & Escrow Protocol",
+    title: "LEASIR — On-Chain Rental Agreements & Escrow",
     description:
-      "Automated monthly rent distribution, security deposit multi-sig escrow, and immutable dispute resolution on Ethereum.",
+      "Lease agreements executed by Solidity smart contracts: rent terms, deposit terms, and dispute states on the connected Ethereum network.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "LEASIR — Smart Contract Rental Agreements & Escrow Protocol",
+    title: "LEASIR — On-Chain Rental Agreements & Escrow",
     description:
-      "Automated monthly rent distribution, security deposit multi-sig escrow, and immutable dispute resolution on Ethereum.",
+      "Lease agreements executed by Solidity smart contracts: rent terms, deposit terms, and dispute states on the connected Ethereum network.",
   },
 };
 
@@ -53,7 +53,7 @@ export default function RootLayout({ children }) {
     name: "LEASIR Protocol",
     url: "https://leasir.vercel.app",
     description:
-      "Decentralized legal-tech platform for automated rent payments, security deposit escrow, and transparent on-chain dispute resolution on Ethereum.",
+      "Lease agreements recorded and executed by Solidity smart contracts on the connected Ethereum network.",
     founder: {
       "@type": "Person",
       name: "Ishaan Ray",

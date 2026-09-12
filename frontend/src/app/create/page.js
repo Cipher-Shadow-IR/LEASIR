@@ -40,7 +40,6 @@ export default function CreateAgreement() {
   };
 
   const setTestTenant = () => {
-    // Hardhat Account #1 address for easy testing
     setForm({
       ...form,
       tenantAddress: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
@@ -96,7 +95,6 @@ export default function CreateAgreement() {
     }
   };
 
-  // Calculate duration in days
   const startD = new Date(form.startDate);
   const endD = new Date(form.endDate);
   const durationDays = !isNaN(startD) && !isNaN(endD) && endD > startD
@@ -105,32 +103,30 @@ export default function CreateAgreement() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      {/* Header */}
       <div className="border-b border-slate-800/80 pb-6">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-mono font-medium text-indigo-400 mb-3">
+        <div className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-1 text-xs font-mono font-medium text-slate-500 dark:border-slate-800 dark:text-slate-400">
           <FileSignature className="h-3.5 w-3.5" />
-          <span>LEGAL LEASE DRAFTING STUDIO</span>
+          <span>LEASE DRAFTING</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           Draft On-Chain Rental Agreement
         </h1>
-        <p className="mt-2 text-sm text-slate-400">
-          Deploy an immutable, cryptographically enforceable rental agreement onto Ethereum.
-          The tenant will be prompted to sign and activate the lease upon connection.
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Create an on-chain rental agreement and deploy it with your wallet.
+          The tenant address you provide will then be able to accept and
+          activate the lease.
         </p>
       </div>
 
       {!CONTRACT_ADDRESS && (
         <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-xs text-amber-300 flex items-center gap-2 font-mono">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          <span>Warning: NEXT_PUBLIC_CONTRACT_ADDRESS is not set. Ensure contracts are deployed to Hardhat.</span>
+          <span>Warning: NEXT_PUBLIC_CONTRACT_ADDRESS is not set. Ensure the RentalAgreement contract is deployed to Sepolia.</span>
         </div>
       )}
 
-      {/* Main Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Section 1: Tenant Counterparty */}
-        <div className="glow-card rounded-2xl p-6 space-y-4">
+        <div className="glow-card rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-indigo-400" />
@@ -139,9 +135,9 @@ export default function CreateAgreement() {
             <button
               type="button"
               onClick={setTestTenant}
-              className="text-xs font-mono text-indigo-400 hover:text-indigo-300 hover:underline"
+              className="text-xs font-mono text-indigo-600 hover:text-indigo-500 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
             >
-              Paste Test Account
+              Use local test tenant
             </button>
           </div>
 
@@ -159,13 +155,12 @@ export default function CreateAgreement() {
               className="w-full rounded-xl border border-slate-800 bg-slate-900/90 px-4 py-2.5 text-sm font-mono text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              Only this specific address will have the cryptographic right to accept this agreement and pay rent.
+              Only this address can accept the agreement and pay rent on-chain.
             </span>
           </div>
         </div>
 
-        {/* Section 2: Financial Terms */}
-        <div className="glow-card rounded-2xl p-6 space-y-4">
+        <div className="glow-card rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Coins className="h-4 w-4 text-indigo-400" />
             <h2 className="text-base font-bold text-white">2. Financial & Escrow Terms</h2>
@@ -192,7 +187,7 @@ export default function CreateAgreement() {
                 </span>
               </div>
               <span className="text-[11px] text-slate-500 mt-1 block">
-                Directly forwarded to your wallet on each monthly payment.
+                Forwarded to your wallet when the tenant executes a rent payment.
               </span>
             </div>
 
@@ -216,14 +211,14 @@ export default function CreateAgreement() {
                 </span>
               </div>
               <span className="text-[11px] text-slate-500 mt-1 block">
-                Held in smart contract escrow until lease termination or refund.
+                Recorded as a lease term. Release follows the contract lifecycle:
+                refund after termination, or dispute resolution.
               </span>
             </div>
           </div>
         </div>
 
-        {/* Section 3: Timeline & Grace Period */}
-        <div className="glow-card rounded-2xl p-6 space-y-4">
+        <div className="glow-card rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-indigo-400" />
             <h2 className="text-base font-bold text-white">3. Lease Schedule & Grace Period</h2>
@@ -286,49 +281,46 @@ export default function CreateAgreement() {
           </div>
         </div>
 
-        {/* Section 4: Legal Summary Guarantee Box */}
-        <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.04] p-5 space-y-3">
-          <div className="flex items-center gap-2 text-indigo-400 text-sm font-bold">
+        <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/[0.04] p-5 space-y-3">
+          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-sm font-bold">
             <Lock className="h-4 w-4" />
-            <span>On-Chain Contract Guarantees</span>
+            <span>What the deployed contract enforces</span>
           </div>
-          <ul className="space-y-1.5 text-xs text-slate-300">
+          <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
             <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
-              <span>Security deposit cannot be withdrawn prematurely without tenant refund or mutual arbitration.</span>
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <span>Only the recorded tenant address may accept the agreement and execute rent payments.</span>
             </li>
             <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
-              <span>Rent payments record verifiable on-chain timestamps visible to both parties.</span>
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <span>Each rent payment is recorded on-chain with amount, timestamp, and payer address.</span>
             </li>
             <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
-              <span>Dispute resolution locks escrow balance until fair resolution occurs.</span>
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <span>Raising a dispute moves the agreement to a Disputed state, which suspends standard lifecycle actions.</span>
             </li>
           </ul>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading || !CONTRACT_ADDRESS}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 px-6 py-4 text-base font-semibold text-white shadow-xl shadow-indigo-500/20 hover:from-indigo-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="w-full flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-6 py-4 text-base font-semibold text-on-accent shadow-sm transition-all hover:bg-indigo-500 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
         >
           {loading ? (
             <>
               <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Deploying Agreement to Blockchain...</span>
+              <span>Deploying Agreement&hellip;</span>
             </>
           ) : (
             <>
               <FileSignature className="h-5 w-5" />
-              <span>Sign & Deploy Legal Lease</span>
+              <span>Deploy Agreement</span>
             </>
           )}
         </button>
       </form>
 
-      {/* Error Card */}
       {error && (
         <div className="rounded-2xl bg-rose-500/10 border border-rose-500/20 p-5 space-y-2">
           <div className="flex items-center gap-2 text-rose-400 text-sm font-bold">
@@ -339,7 +331,6 @@ export default function CreateAgreement() {
         </div>
       )}
 
-      {/* Success Card */}
       {result && (
         <div className="glow-card rounded-2xl p-6 border-emerald-500/40 bg-emerald-500/[0.04] space-y-4">
           <div className="flex items-center gap-2 text-emerald-400">
@@ -347,8 +338,10 @@ export default function CreateAgreement() {
             <h3 className="text-lg font-bold">Lease Agreement Successfully Deployed!</h3>
           </div>
 
-          <p className="text-sm text-slate-300">
-            The agreement is now pending tenant acceptance. The counterparty can connect their wallet to sign.
+          <p className="text-sm text-slate-500 dark:text-slate-300">
+            The agreement now awaits acceptance by the tenant address recorded
+            in this lease. The tenant can connect their wallet and activate it
+            from the agreement page.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">

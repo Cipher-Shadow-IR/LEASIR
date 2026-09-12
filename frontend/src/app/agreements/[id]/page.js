@@ -1,32 +1,125 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { connectWallet, getContract, switchToLocalhost, formatEth, parseEth } from "@/lib/web3";
+import { connectWallet, getContract, switchToLocalhost, formatEth, parseEth, getContractBalance } from "@/lib/web3";
 import { AGREEMENT_STATES } from "@/lib/contract";
 import {
-  Scale,
-  Shield,
-  Coins,
-  Calendar,
-  Clock,
   ArrowLeft,
   CheckCircle2,
   AlertTriangle,
-  Lock,
-  User,
-  ExternalLink,
   Copy,
   Check,
-  CreditCard,
-  FileText,
+  Loader2,
   AlertCircle,
-  Receipt,
-  UserCheck,
+  FileWarning,
+  Wallet,
 } from "lucide-react";
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+
+const STATE_TONE = {
+  Pending: "text-amber-600 dark:text-amber-400",
+  Active: "text-emerald-600 dark:text-emerald-400",
+  Terminated: "text-slate-500 dark:text-slate-400",
+  Disputed: "text-rose-600 dark:text-rose-400",
+  Completed: "text-indigo-600 dark:text-indigo-400",
+};
+
+const stateDot = (state) => {
+  switch (state) {
+    case "Active":
+      return "bg-emerald-500";
+    case "Pending":
+      return "bg-amber-500";
+    case "Disputed":
+      return "bg-rose-500";
+    case "Terminated":
+      return "bg-slate-500";
+    default:
+      return "bg-indigo-500";
+  }
+};
+
+function TransactionStatus({ phase, hash, error, hint }) {
+  if (phase === "idle") return null;
+
+  const steps = [
+    { key: "waiting", label: "Wallet confirmation" },
+    { key: "pending", label: "Transaction pending" },
+    { key: "confirmed", label: "Confirmed" },
+  ];
+
+  const currentIndex = phase === "confirmed" ? 2 : phase === "failed" ? 0 : phase === "pending" ? 1 : 0;
+
+  return (
+    <div className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-800">
+      {phase === "failed" ? (
+        <div className="flex items-start gap-3">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" />
+          <div className="min-w-0 space-y-2">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              Transaction failed
+            </p>
+            <p className="break-words font-mono text-xs text-rose-600 dark:text-rose-400">
+              {error}
+            </p>
+            {hint && (
+              <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">{hint}</p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            {phase !== "confirmed" ? (
+              <Loader2 className="h-5 w-5 animate-spin text-indigo-500" />
+            ) : (
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            )}
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              {phase === "confirmed"
+                ? "Transaction confirmed"
+                : phase === "pending"
+                  ? "Transaction pending"
+                  : "Waiting for wallet confirmation"}
+            </p>
+          </div>
+
+          <ol className="flex items-center gap-0">
+            {steps.map((step, i) => (
+              <li key={step.key} className={`flex items-center ${i > 0 ? "flex-1" : ""}`}>
+                {i > 0 && (
+                  <span
+                    className={`mx-2 h-px w-full ${
+                      i <= currentIndex ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-800"
+                    }`}
+                  />
+                )}
+                <span
+                  className={`whitespace-nowrap text-[11px] font-medium ${
+                    i <= currentIndex
+                      ? "text-indigo-600 dark:text-indigo-400"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {i + 1}. {step.label}
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          {hash && (
+            <p className="break-all font-mono text-[11px] text-slate-500 dark:text-slate-400">
+              Tx: {hash}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AgreementDetail() {
   const routeParams = useParams();
@@ -34,32 +127,14 @@ export default function AgreementDetail() {
   const [account, setAccount] = useState(null);
   const [agreement, setAgreement] = useState(null);
   const [payments, setPayments] = useState([]);
+  const [contractBalance, setContractBalance] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [successMsg, setSuccessMsg] = useState(null);
+  const [tx, setTx] = useState({ phase: "idle", hash: null, error: null, hint: null });
   const [copiedLandlord, setCopiedLandlord] = useState(false);
   const [copiedTenant, setCopiedTenant] = useState(false);
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const { address } = await connectWallet();
-        await switchToLocalhost();
-        setAccount(address);
-      } catch (e) {
-        // not connected
-      }
-    };
-    init();
-  }, []);
-
-  useEffect(() => {
-    if (!id) return;
-    loadAgreement();
-  }, [id]);
-
-  const loadAgreement = async () => {
+  const loadAgreement = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -97,48 +172,103 @@ export default function AgreementDetail() {
       } else {
         setPayments([]);
       }
+
+      if (CONTRACT_ADDRESS) {
+        const bal = await getContractBalance(CONTRACT_ADDRESS);
+        setContractBalance(bal);
+      }
     } catch (err) {
       setError(err.reason || err.message || "Failed to load agreement from blockchain");
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const doAction = async (action) => {
-    setActionLoading(true);
-    setError(null);
-    setSuccessMsg(null);
+  useEffect(() => {
+    if (!id) return;
+    loadAgreement();
+  }, [id, loadAgreement]);
+
+  useEffect(() => {
+    const handler = (accounts) => {
+      setAccount(accounts[0] || null);
+    };
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", handler);
+      return () => window.ethereum.removeListener("accountsChanged", handler);
+    }
+    return undefined;
+  }, []);
+
+  const runAction = async (action) => {
+    setTx({ phase: "waiting", hash: null, error: null, hint: null });
     try {
       await connectWallet();
       await switchToLocalhost();
       const contract = await getContract(CONTRACT_ADDRESS);
 
-      let tx;
+      let promise;
       switch (action) {
         case "accept":
-          tx = await contract.acceptAgreement(id);
+          promise = contract.acceptAgreement(id);
           break;
         case "pay":
-          tx = await contract.payRent(id, { value: parseEth(agreement.rentAmount) });
+          promise = contract.payRent(id, { value: parseEth(agreement.rentAmount) });
           break;
         case "terminate":
-          tx = await contract.terminateAgreement(id);
+          promise = contract.terminateAgreement(id);
           break;
         case "dispute":
-          tx = await contract.raiseDispute(id);
+          promise = contract.raiseDispute(id);
           break;
         case "refund":
-          tx = await contract.refundDeposit(id);
+          promise = contract.refundDeposit(id);
           break;
+        default:
+          throw new Error("Unknown action");
       }
 
-      await tx.wait();
-      setSuccessMsg(`Action "${action}" successfully executed on Ethereum blockchain.`);
+      const txPromise = await promise;
+      setTx({ phase: "pending", hash: txPromise.hash, error: null, hint: null });
+
+      const receipt = await txPromise.wait();
+      setTx({
+        phase: "confirmed",
+        hash: receipt.hash,
+        error: null,
+        hint: null,
+      });
+
       await loadAgreement();
+
+      window.setTimeout(() => {
+        setTx((current) => (current.phase === "confirmed" ? { ...current, phase: "idle" } : current));
+      }, 6000);
     } catch (err) {
-      setError(err.reason || err.message || "Transaction failed");
-    } finally {
-      setActionLoading(false);
+      const reason =
+        err?.reason ||
+        err?.shortMessage ||
+        err?.info?.error?.message ||
+        err?.message ||
+        "The transaction was not completed.";
+
+      let hint = null;
+      if (/only tenant/i.test(reason)) {
+        hint =
+          "Only the tenant address recorded in the agreement can perform this action. Switch to that account in your wallet and retry.";
+      } else if (/only landlord/i.test(reason)) {
+        hint =
+          "Only the landlord address recorded in the agreement can perform this action. Switch to that account in your wallet and retry.";
+      } else if (/invalid state/i.test(reason)) {
+        hint =
+          "The agreement is not in the state required for this action. Refresh the page to read the latest on-chain state.";
+      } else if (/term not ended/i.test(reason)) {
+        hint = "Termination is only permitted after the lease end date has passed.";
+      } else if (/exact rent required/i.test(reason)) {
+        hint = "Send exactly the rent amount defined in the agreement.";
+      }
+
+      setTx({ phase: "failed", hash: null, error: reason, hint });
     }
   };
 
@@ -155,25 +285,33 @@ export default function AgreementDetail() {
 
   if (loading) {
     return (
-      <div className="py-24 text-center text-slate-400 space-y-3">
-        <div className="h-8 w-8 mx-auto border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm font-mono">Loading legal agreement #{id} from blockchain...</p>
+      <div className="py-24 text-center">
+        <div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-500 dark:border-slate-700 dark:border-t-indigo-400" />
+        <p className="mt-4 text-xs font-mono text-slate-500 dark:text-slate-400">
+          Reading agreement #{id} from the contract&hellip;
+        </p>
       </div>
     );
   }
 
   if (!agreement) {
     return (
-      <div className="mx-auto max-w-2xl rounded-2xl bg-rose-500/10 border border-rose-500/20 p-8 text-center space-y-4">
-        <AlertCircle className="h-10 w-10 text-rose-400 mx-auto" />
-        <h2 className="text-lg font-bold text-white">Agreement #{id} Not Found</h2>
-        <p className="text-xs font-mono text-rose-300">{error || "Contract record does not exist on this EVM network."}</p>
+      <div className="mx-auto max-w-xl rounded-xl border border-dashed border-slate-300 px-8 py-16 text-center dark:border-slate-700">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 text-slate-400 dark:border-slate-800 dark:text-slate-500">
+          <FileWarning className="h-5 w-5" />
+        </div>
+        <p className="meta-label mt-5 text-slate-500 dark:text-slate-400">
+          Agreement #{id} not found
+        </p>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          {error || "No such record exists on the connected network."}
+        </p>
         <Link
           href="/agreements"
-          className="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700"
+          className="mt-6 inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-white"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Return to Registry</span>
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Return to Registry
         </Link>
       </div>
     );
@@ -181,295 +319,227 @@ export default function AgreementDetail() {
 
   const isLandlord = account && agreement.landlord && account.toLowerCase() === agreement.landlord.toLowerCase();
   const isTenant = account && agreement.tenant && account.toLowerCase() === agreement.tenant.toLowerCase();
-  const canAct = isLandlord || isTenant;
+  const isParty = isLandlord || isTenant;
 
-  const STATE_STYLES = {
-    Pending: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-    Active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-    Terminated: "bg-slate-500/10 text-slate-400 border-slate-700/60",
-    Disputed: "bg-rose-500/10 text-rose-400 border-rose-500/30",
-    Completed: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
-  };
+  const now = Date.now() / 1000;
+  const endTs = agreement.endDate.getTime() / 1000;
+  const expired = now >= endTs;
 
-  const isExpired = new Date() >= agreement.endDate;
+  const canAccept = agreement.state === "Pending" && isTenant && now <= endTs;
+  const canPayRent = agreement.state === "Active" && isTenant;
+  const canTerminate = agreement.state === "Active" && isLandlord && expired;
+  const canRefund = agreement.state === "Terminated" && isLandlord && parseFloat(agreement.securityDeposit) > 0;
+  const canDispute = (agreement.state === "Active" || agreement.state === "Terminated") && isParty;
+
+  const contractBalanceLabel =
+    contractBalance !== null ? `${parseFloat(contractBalance).toFixed(4)} ETH` : "—";
+
+  const addresses = (
+    <section className="border-t border-slate-200 pt-8 dark:border-slate-800">
+      <h2 className="meta-label text-slate-500 dark:text-slate-400">Parties</h2>
+      <div className="mt-4 grid gap-6 sm:grid-cols-2">
+        <div>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Landlord</p>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">
+              Rent recipient
+            </span>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/40">
+            <span className="break-all font-mono text-xs text-slate-700 dark:text-slate-300">
+              {agreement.landlord}
+            </span>
+            <button
+              onClick={() => copyToClipboard(agreement.landlord, "landlord")}
+              className="shrink-0 text-slate-400 transition-colors hover:text-slate-900 dark:hover:text-white"
+              title="Copy address"
+            >
+              {copiedLandlord ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Tenant</p>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">
+              Lease holder
+            </span>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/40">
+            <span className="break-all font-mono text-xs text-slate-700 dark:text-slate-300">
+              {agreement.tenant}
+            </span>
+            <button
+              onClick={() => copyToClipboard(agreement.tenant, "tenant")}
+              className="shrink-0 text-slate-400 transition-colors hover:text-slate-900 dark:hover:text-white"
+              title="Copy address"
+            >
+              {copiedTenant ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {account && (
+        <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+          Connected role:{" "}
+          <span className="font-semibold text-slate-900 dark:text-slate-100">
+            {isLandlord ? "Landlord" : isTenant ? "Tenant" : "Observer (read-only)"}
+          </span>
+        </p>
+      )}
+    </section>
+  );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      {/* Top Breadcrumb & Actions */}
+    <div className="mx-auto max-w-3xl space-y-10">
       <div className="flex items-center justify-between">
         <Link
           href="/agreements"
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-slate-200 transition-colors"
+          className="link-underline inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Back to Registry</span>
+          Back to Registry
         </Link>
-        <span className="font-mono text-xs text-slate-500">Contract: {CONTRACT_ADDRESS?.slice(0, 8)}...</span>
+        <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500">
+          Contract {CONTRACT_ADDRESS?.slice(0, 8)}&hellip;{CONTRACT_ADDRESS?.slice(-6)}
+        </span>
       </div>
 
-      {/* Header Banner */}
-      <div className="glow-card rounded-2xl p-6 sm:p-8 space-y-4 relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wider">
-                Smart Lease Agreement
-              </span>
-              <span className="text-xs font-mono text-slate-500">#{agreement.id}</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+      <header className="border-b border-slate-200 pb-8 dark:border-slate-800">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="meta-label text-indigo-600 dark:text-indigo-400">
+              Smart lease agreement #{agreement.id}
+            </p>
+            <h1 className="font-display mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
               Legal Tenancy Covenant
             </h1>
           </div>
-
-          <div className="self-start sm:self-auto">
+          <div className="flex items-center gap-4">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-xs font-semibold uppercase tracking-wider ${
-                STATE_STYLES[agreement.state] || "bg-slate-800 text-slate-300"
-              }`}
+              className={`inline-flex items-center gap-2 text-sm font-semibold ${STATE_TONE[agreement.state] || "text-slate-500"}`}
             >
-              {agreement.state === "Active" && <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />}
-              {agreement.state === "Pending" && <Clock className="h-3.5 w-3.5" />}
-              {agreement.state === "Disputed" && <AlertTriangle className="h-3.5 w-3.5" />}
-              <span>{agreement.state}</span>
+              <span className={`h-2 w-2 rounded-full ${stateDot(agreement.state)}`} />
+              {agreement.state}
             </span>
           </div>
         </div>
+      </header>
 
-        {/* User Role Banner */}
-        {account && (
-          <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-3 flex items-center justify-between text-xs">
-            <span className="text-slate-400">Your Connected Role:</span>
-            {isLandlord ? (
-              <span className="font-semibold text-indigo-400 font-mono flex items-center gap-1.5">
-                <UserCheck className="h-3.5 w-3.5" /> Landlord (Owner / Creator)
-              </span>
-            ) : isTenant ? (
-              <span className="font-semibold text-emerald-400 font-mono flex items-center gap-1.5">
-                <UserCheck className="h-3.5 w-3.5" /> Designated Tenant Counterparty
-              </span>
-            ) : (
-              <span className="text-slate-400 font-mono">Public Observer (Read-Only)</span>
-            )}
+      {addresses}
+
+      <section className="border-t border-slate-200 pt-8 dark:border-slate-800">
+        <h2 className="meta-label text-slate-500 dark:text-slate-400">Financial terms</h2>
+        <div className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-4">
+          <div>
+            <p className="meta-label text-slate-400 dark:text-slate-500">Monthly rent</p>
+            <p className="mt-1 font-mono text-lg font-bold text-slate-900 dark:text-slate-100">
+              {agreement.rentAmount} <span className="text-xs font-medium text-slate-400">ETH</span>
+            </p>
           </div>
-        )}
-      </div>
-
-      {/* Parties & Signatures Card */}
-      <div className="glow-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-2">
-          <Scale className="h-4 w-4 text-indigo-400" />
-          <span>Parties to Covenant</span>
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-slate-400">Landlord Address</span>
-              <button
-                onClick={() => copyToClipboard(agreement.landlord, "landlord")}
-                className="text-[11px] font-mono text-indigo-400 hover:underline inline-flex items-center gap-1"
-              >
-                {copiedLandlord ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                <span>{copiedLandlord ? "Copied" : "Copy"}</span>
-              </button>
-            </div>
-            <p className="font-mono text-xs text-slate-200 break-all">{agreement.landlord}</p>
-            <span className="text-[10px] text-slate-500 block">Recipient of monthly rent payments</span>
+          <div>
+            <p className="meta-label text-slate-400 dark:text-slate-500">Deposit (recorded)</p>
+            <p className="mt-1 font-mono text-lg font-bold text-slate-900 dark:text-slate-100">
+              {agreement.securityDeposit} <span className="text-xs font-medium text-slate-400">ETH</span>
+            </p>
           </div>
-
-          <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-slate-400">Tenant Address</span>
-              <button
-                onClick={() => copyToClipboard(agreement.tenant, "tenant")}
-                className="text-[11px] font-mono text-indigo-400 hover:underline inline-flex items-center gap-1"
-              >
-                {copiedTenant ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                <span>{copiedTenant ? "Copied" : "Copy"}</span>
-              </button>
-            </div>
-            <p className="font-mono text-xs text-slate-200 break-all">{agreement.tenant}</p>
-            <span className="text-[10px] text-slate-500 block">Holder of lease occupancy rights</span>
+          <div>
+            <p className="meta-label text-slate-400 dark:text-slate-500">Grace period</p>
+            <p className="mt-1 font-mono text-lg font-bold text-slate-900 dark:text-slate-100">
+              {agreement.gracePeriod / 86400} <span className="text-xs font-medium text-slate-400">days</span>
+            </p>
+          </div>
+          <div>
+            <p className="meta-label text-slate-400 dark:text-slate-500">Payments made</p>
+            <p className="mt-1 font-mono text-lg font-bold text-slate-900 dark:text-slate-100">
+              {payments.length}
+            </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Financial & Terms Breakdown */}
-      <div className="glow-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-2">
-          <Coins className="h-4 w-4 text-indigo-400" />
-          <span>Financial Terms & Duration</span>
-        </h2>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-3">
-            <span className="text-[11px] text-slate-400 block font-mono">Monthly Rent</span>
-            <span className="text-lg font-bold text-white font-mono">{agreement.rentAmount}</span>
-            <span className="text-[10px] text-indigo-400 font-mono block">ETH / month</span>
+      <section className="border-t border-slate-200 pt-8 dark:border-slate-800">
+        <h2 className="meta-label text-slate-500 dark:text-slate-400">Timeline</h2>
+        <div className="mt-4 grid gap-6 sm:grid-cols-2">
+          <div>
+            <p className="meta-label text-slate-400 dark:text-slate-500">Effective start</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {agreement.startDate.toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </p>
           </div>
-
-          <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-3">
-            <span className="text-[11px] text-slate-400 block font-mono">Security Escrow</span>
-            <span className="text-lg font-bold text-white font-mono">{agreement.securityDeposit}</span>
-            <span className="text-[10px] text-indigo-400 font-mono block">ETH Locked</span>
-          </div>
-
-          <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-3">
-            <span className="text-[11px] text-slate-400 block font-mono">Grace Period</span>
-            <span className="text-lg font-bold text-white font-mono">
-              {agreement.gracePeriod / 86400}
-            </span>
-            <span className="text-[10px] text-slate-400 block">Days after due</span>
-          </div>
-
-          <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-3">
-            <span className="text-[11px] text-slate-400 block font-mono">Payments Made</span>
-            <span className="text-lg font-bold text-white font-mono">{payments.length}</span>
-            <span className="text-[10px] text-slate-400 block">Verified on-chain</span>
+          <div>
+            <p className="meta-label text-slate-400 dark:text-slate-500">Expiration</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {agreement.endDate.toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </p>
           </div>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          <div className="flex items-center justify-between rounded-xl bg-slate-900/50 border border-slate-800 px-4 py-2.5 text-xs">
-            <span className="text-slate-400">Effective Start Date:</span>
-            <span className="font-mono text-slate-200">
-              {agreement.startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-            </span>
+      <section className="border-t border-slate-200 pt-8 dark:border-slate-800">
+        <h2 className="meta-label text-slate-500 dark:text-slate-400">Escrow</h2>
+        <div className="mt-4 grid gap-6 sm:grid-cols-2">
+          <div>
+            <p className="meta-label text-slate-400 dark:text-slate-500">Contract balance (live)</p>
+            <p className="mt-1 font-mono text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+              {contractBalanceLabel}
+            </p>
           </div>
-          <div className="flex items-center justify-between rounded-xl bg-slate-900/50 border border-slate-800 px-4 py-2.5 text-xs">
-            <span className="text-slate-400">Lease Expiration Date:</span>
-            <span className="font-mono text-slate-200">
-              {agreement.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Smart Contract Actions */}
-      {canAct && (
-        <div className="glow-card rounded-2xl p-6 space-y-4 border-indigo-500/30">
-          <h2 className="text-sm font-mono uppercase tracking-wider text-slate-300 font-semibold flex items-center gap-2">
-            <Lock className="h-4 w-4 text-indigo-400" />
-            <span>Authorized Party Actions</span>
-          </h2>
-
-          <div className="flex flex-wrap gap-3">
-            {/* Tenant: Accept */}
-            {agreement.state === "Pending" && isTenant && (
-              <button
-                onClick={() => doAction("accept")}
-                disabled={actionLoading}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-500 disabled:opacity-50 transition-all"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                <span>{actionLoading ? "Signing on EVM..." : "Accept & Activate Lease"}</span>
-              </button>
-            )}
-
-            {/* Tenant: Pay Rent */}
-            {agreement.state === "Active" && isTenant && (
-              <button
-                onClick={() => doAction("pay")}
-                disabled={actionLoading}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:from-indigo-600 hover:to-blue-700 disabled:opacity-50 transition-all"
-              >
-                <CreditCard className="h-4 w-4" />
-                <span>{actionLoading ? "Processing Payment..." : `Pay Rent (${agreement.rentAmount} ETH)`}</span>
-              </button>
-            )}
-
-            {/* Landlord: Terminate */}
-            {agreement.state === "Active" && isLandlord && (
-              <button
-                onClick={() => doAction("terminate")}
-                disabled={actionLoading || !isExpired}
-                className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all ${
-                  isExpired
-                    ? "bg-slate-700 text-white hover:bg-slate-600 shadow-md"
-                    : "bg-slate-800 text-slate-500 cursor-not-allowed"
-                }`}
-                title={!isExpired ? "Can only terminate after end date has passed" : ""}
-              >
-                <span>{actionLoading ? "Terminating..." : "Terminate Lease (Post-Term)"}</span>
-              </button>
-            )}
-
-            {/* Landlord: Refund Security Deposit */}
-            {agreement.state === "Terminated" && isLandlord && (
-              <button
-                onClick={() => doAction("refund")}
-                disabled={actionLoading}
-                className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-purple-500 shadow-md transition-all"
-              >
-                <span>{actionLoading ? "Refunding..." : "Refund Deposit to Tenant"}</span>
-              </button>
-            )}
-
-            {/* Dispute: Either Party */}
-            {(agreement.state === "Active" || agreement.state === "Terminated") && canAct && (
-              <button
-                onClick={() => doAction("dispute")}
-                disabled={actionLoading}
-                className="inline-flex items-center gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 px-5 py-2.5 text-sm font-medium text-rose-300 hover:bg-rose-500/20 transition-all"
-              >
-                <AlertTriangle className="h-4 w-4 text-rose-400" />
-                <span>{actionLoading ? "Submitting Dispute..." : "Raise Dispute to Contract"}</span>
-              </button>
-            )}
+          <div className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            <p>
+              The security deposit is a recorded term of the agreement. Release
+              follows the contract lifecycle: refund after termination, or
+              distribution via dispute resolution.
+            </p>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Feedback Banners */}
-      {successMsg && (
-        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 text-xs font-mono text-emerald-300 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0" />
-          <span>{successMsg}</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-4 text-xs font-mono text-rose-300 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <span className="break-all">{error}</span>
-        </div>
-      )}
-
-      {/* On-Chain Payment Ledger Table */}
-      <div className="glow-card rounded-2xl p-6 space-y-4">
+      <section className="border-t border-slate-200 pt-8 dark:border-slate-800">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-2">
-            <Receipt className="h-4 w-4 text-indigo-400" />
-            <span>On-Chain Payments Audit Ledger</span>
+          <h2 className="meta-label text-slate-500 dark:text-slate-400">
+            Payment history
           </h2>
-          <span className="text-xs font-mono text-slate-500">{payments.length} Transaction(s)</span>
+          <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500">
+            {payments.length} recorded
+          </span>
         </div>
 
         {payments.length === 0 ? (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-8 text-center text-xs text-slate-500 space-y-1">
-            <p>No rent payments recorded on-chain yet.</p>
-            <p>Once the tenant executes payment, cryptographic transaction records will appear here.</p>
-          </div>
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+            No rent payments have been executed against this agreement.
+          </p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-900 text-slate-400 font-mono border-b border-slate-800">
-                <tr>
-                  <th className="px-4 py-3">Tx ID</th>
-                  <th className="px-4 py-3">Amount</th>
-                  <th className="px-4 py-3">Timestamp</th>
-                  <th className="px-4 py-3">Payer Address</th>
-                  <th className="px-4 py-3 text-right">Status</th>
+          <div className="mt-4 overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
+                <tr className="text-slate-500 dark:text-slate-400">
+                  <th className="px-4 py-3 font-medium">Payment</th>
+                  <th className="px-4 py-3 font-medium">Amount</th>
+                  <th className="px-4 py-3 font-medium">Date</th>
+                  <th className="px-4 py-3 font-medium">Payer</th>
+                  <th className="px-4 py-3 text-right font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/80 bg-slate-950/50">
-                {payments.map((p, i) => (
-                  <tr key={i} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="px-4 py-3 font-mono text-slate-400">#{p.id}</td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-100">{p.amount} ETH</td>
-                    <td className="px-4 py-3 text-slate-300">
-                      {p.paidDate.toLocaleDateString("en-US", {
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                {payments.map((p) => (
+                  <tr key={p.id}>
+                    <td className="px-4 py-3 font-mono text-slate-500 dark:text-slate-400">#{p.id}</td>
+                    <td className="px-4 py-3 font-mono font-semibold text-slate-900 dark:text-slate-100">
+                      {p.amount} ETH
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      {p.paidDate.toLocaleString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -477,13 +547,13 @@ export default function AgreementDetail() {
                         minute: "2-digit",
                       })}
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-400">
-                      {p.payer ? `${p.payer.slice(0, 6)}...${p.payer.slice(-4)}` : "—"}
+                    <td className="px-4 py-3 font-mono text-slate-600 dark:text-slate-300">
+                      {p.payer ? `${p.payer.slice(0, 6)}&hellip;${p.payer.slice(-4)}` : "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-emerald-400">
+                      <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                         <CheckCircle2 className="h-3 w-3" />
-                        <span>{p.status}</span>
+                        {p.status}
                       </span>
                     </td>
                   </tr>
@@ -492,8 +562,91 @@ export default function AgreementDetail() {
             </table>
           </div>
         )}
-      </div>
+      </section>
+
+      {isParty && (
+        <section className="border-t border-slate-200 pt-8 dark:border-slate-800">
+          <h2 className="meta-label text-slate-500 dark:text-slate-400">
+            Contract actions
+          </h2>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {canAccept && (
+              <button
+                onClick={() => runAction("accept")}
+                disabled={tx.phase === "waiting" || tx.phase === "pending"}
+                className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-on-accent transition-all hover:bg-emerald-500 disabled:opacity-50"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Accept &amp; Activate Lease
+              </button>
+            )}
+
+            {canPayRent && (
+              <button
+                onClick={() => runAction("pay")}
+                disabled={tx.phase === "waiting" || tx.phase === "pending"}
+                className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-on-accent transition-all hover:bg-indigo-500 disabled:opacity-50"
+                title={`Pay ${agreement.rentAmount} ETH to the landlord`}
+              >
+                <Wallet className="h-4 w-4" />
+                Pay Rent ({agreement.rentAmount} ETH)
+              </button>
+            )}
+
+            {canTerminate && (
+              <button
+                onClick={() => runAction("terminate")}
+                disabled={tx.phase === "waiting" || tx.phase === "pending"}
+                className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-400 hover:text-slate-900 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:text-white"
+              >
+                Terminate Lease
+              </button>
+            )}
+
+            {canRefund && (
+              <button
+                onClick={() => runAction("refund")}
+                disabled={tx.phase === "waiting" || tx.phase === "pending"}
+                className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-on-accent transition-all hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+              >
+                Refund Deposit
+              </button>
+            )}
+
+            {canDispute && (
+              <button
+                onClick={() => runAction("dispute")}
+                disabled={tx.phase === "waiting" || tx.phase === "pending"}
+                className="inline-flex items-center gap-2 rounded-md border border-rose-300 px-5 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50 dark:border-rose-500/40 dark:text-rose-400 dark:hover:bg-rose-500/10"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Raise Dispute
+              </button>
+            )}
+
+            {!canAccept && !canPayRent && !canTerminate && !canRefund && !canDispute && (
+              <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                No contract actions are available for the current state and
+                connected role.
+              </p>
+            )}
+          </div>
+
+          <TransactionStatus
+            phase={tx.phase}
+            hash={tx.hash}
+            error={tx.error}
+            hint={tx.hint}
+          />
+        </section>
+      )}
+
+      <p className="border-t border-slate-200 pt-6 text-[11px] leading-relaxed text-slate-400 dark:border-slate-800 dark:text-slate-500">
+        Actions are executed against the deployed RentalAgreement contract on
+        the connected network. Read values above are fetched directly from
+        chain state.
+      </p>
     </div>
   );
 }
-
